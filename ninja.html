@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نینجا رانر v0.3 - ژاپنی</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1a1a2e;font-family:Tahoma;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh}
+  #gameContainer{position:relative}
+  canvas{border:4px solid #0f3460;background:linear-gradient(to bottom,#16213e 0%,#0f3460 100%);display:block}
+  #hud{position:absolute;top:10px;left:10px;color:#fff;font-size:18px;text-shadow:2px 2px 4px #000;z-index:10}
+  #hpBar{width:150px;height:20px;background:#300;border:2px solid #fff;margin-top:5px}
+  #hpFill{height:100%;background:#e94560;transition:width 0.2s}
+  #controls{position:absolute;top:10px;right:10px;color:#fff;font-size:12px;text-align:right;text-shadow:2px 2px 4px #000}
+  #startScreen{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:20}
+  #startScreen h1{font-size:48px;color:#e94560;margin-bottom:20px;text-shadow:3px 3px 0px #0f3460}
+  #startScreen button{padding:15px 40px;font-size:20px;background:#e94560;border:none;color:#fff;border-radius:8px;cursor:pointer;margin:10px}
+  #startScreen button:hover{background:#ff6b81}
+  #gameOver{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:20}
+  #gameOver h2{font-size:48px;margin-bottom:20px}
+  #mobileControls{display:none}
+ .mBtn{position:absolute;bottom:20px;width:70px;height:70px;background:rgba(255,255,255,0.2);border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;user-select:none}
+  #leftBtn{left:20px}
+  #rightBtn{left:100px}
+  #jumpBtn{right:20px}
+  #duckBtn{right:100px}
+  @media (max-width:768px){#mobileControls{display:block}#controls{font-size:10px}}
+  
+  /* استایل‌های جدید برای سیستم امتیاز */
+  #scoreSection {
+    display: none;
+    margin-top: 15px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 350px;
+    overflow: hidden;
+  }
+  #scoreSection.active {
+    display: block;
+  }
+  #scoreSection h3 {
+    color: #e94560;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+  .player-name-input {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .player-name-input input {
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 2px solid #0f3460;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 16px;
+    width: 200px;
+  }
+  .player-name-input input::placeholder {
+    color: #888;
+  }
+  .player-name-input button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #e94560;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .player-name-input button:hover {
+    background: #ff6b81;
+  }
+  #leaderboardContainer {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 10px 0;
+  }
+  #leaderboardContainer::-webkit-scrollbar {
+    width: 5px;
+  }
+  #leaderboardContainer::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+  }
+  #leaderboardContainer::-webkit-scrollbar-thumb {
+    background: #e94560;
+    border-radius: 10px;
+  }
+  #loadingText {
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+  }
+  .save-status {
+    color: #4caf50;
+    text-align: center;
+    font-size: 14px;
+    margin: 5px 0;
+    min-height: 25px;
+  }
+  .save-status.error {
+    color: #e94560;
+  }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="game" width="900" height="500"></canvas>
+  <div id="hud">
+    <div>امتیاز: <span id="score">0</span> | فاصله: <span id="distance">0</span>m | کلاغ: <span id="crowCount">0</span></div>
+    <div id="hpBar"><div id="hpFill" style="width:100%"></div></div>
+  </div>
+  <div id="controls">
+    A D حرکت | W پرش | S نشستن | M موزیک<br>موبایل: دکمه‌های پایین
+  </div>
+  <div id="startScreen">
+    <h1>🥷 نینجا رانر</h1>
+    <p style="margin-bottom:20px">کلاغ‌های ژاپنی در کمین! جاخالی بده و زنده بمون</p>
+    <button onclick="startGame()">شروع بازی</button>
+    
+    <!-- بخش امتیازات -->
+    <div id="scoreSection" class="active">
+      <h3>🏆 بهترین امتیازات</h3>
+      <div id="leaderboardContainer">
+        <p id="loadingText">در حال بارگذاری امتیازات...</p>
+      </div>
+      <button onclick="refreshLeaderboard()" style="padding:8px 20px;background:#0f3460;border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;margin-top:5px;">
+        🔄 بروزرسانی
+      </button>
+    </div>
+    
+    <p style="margin-top:20px;font-size:14px">سیب 🍎 = +1 جون | کلاغ 🐦‍⬛ = -2 جون</p>
+  </div>
+  <div id="gameOver">
+    <h2 id="gameOverText">باختی!</h2>
+    <p>امتیاز نهایی: <span id="finalScore">0</span></p>
+    
+    <!-- فرم ثبت امتیاز -->
+    <div style="margin:15px 0;width:90%;max-width:400px;">
+      <div class="player-name-input">
+        <input type="text" id="playerNameInput" placeholder="نام خود را وارد کنید..." maxlength="20">
+        <button onclick="savePlayerScore()">💾 ثبت امتیاز</button>
+      </div>
+      <div id="saveStatus" class="save-status"></div>
+    </div>
+    
+    <!-- نمایش لیگ -->
+    <div id="scoreSectionGameOver" style="width:90%;max-width:500px;max-height:250px;overflow:hidden;">
+      <h3 style="color:#e94560;text-align:center;font-size:18px;margin:5px 0;">🏆 بهترین امتیازات</h3>
+      <div id="leaderboardContainerGameOver">
+        <p id="loadingTextGameOver" style="color:#fff;text-align:center;">در حال بارگذاری...</p>
+      </div>
+    </div>
+    
+    <button onclick="restartGame()" style="margin-top:20px;padding:15px 40px;font-size:20px;background:#e94560;border:none;color:#fff;border-radius:8px;cursor:pointer">دوباره</button>
+  </div>
+  <div id="mobileControls">
+    <div class="mBtn" id="leftBtn">A</div>
+    <div class="mBtn" id="rightBtn">D</div>
+    <div class="mBtn" id="jumpBtn">W</div>
+    <div class="mBtn" id="duckBtn">S</div>
+  </div>
+</div>
+
+<!-- اسکریپت API -->
+<script src="api.js"></script>
+
+<script>
+// ========== متغیرهای بازی ==========
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let gameRunning = false;
+let gameOver = false;
+let musicOn = true;
+let animationId = null;
+let currentScore = 0;
+let currentDistance = 0;
+let crowsKilled = 0;
+
+// ========== موسیقی ==========
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+let musicGain = audioCtx.createGain();
+musicGain.gain.value = 0.1;
+musicGain.connect(audioCtx.destination);
+
+function playMusic(){
+  if(!musicOn||!gameRunning) return;
+  const melody = [
+    523,587,659,783,880,783,659,587,
+    523,659,783,880,783,659,587,523,
+    440,523,587,659,587,523,440,0,
+    523,587,659,783,659,587,523,0
+  ];
+  let t = audioCtx.currentTime;
+  melody.forEach((freq,i)=>{
+    if(freq===0) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.25,t+i*0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.18);
+    osc.connect(gain); gain.connect(musicGain);
+    osc.start(t+i*0.2); osc.stop(t+i*0.2+0.2);
+  });
+  setTimeout(()=>{if(gameRunning&&musicOn)playMusic()}, melody.length*200);
+}
+
+function playSound(type){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  if(type==='jump'){
+    osc.frequency.value=400; osc.type='sine';
+    gain.gain.setValueAtTime(0.15,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.1);
+    osc.start(); osc.stop(audioCtx.currentTime+0.1);
+  }else if(type==='pickup'){
+    osc.frequency.setValueAtTime(659,audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1047,audioCtx.currentTime+0.1);
+    gain.gain.setValueAtTime(0.25,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.15);
+    osc.start(); osc.stop(audioCtx.currentTime+0.15);
+  }else if(type==='hit'){
+    osc.frequency.value=150; osc.type='sawtooth';
+    gain.gain.setValueAtTime(0.3,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.2);
+    osc.start(); osc.stop(audioCtx.currentTime+0.2);
+  }
+}
+
+// ========== بازی ==========
+const player = {
+  x:100,y:0,w:40,h:50,
+  vx:0,vy:0,speed:5,jumpPower:-14,
+  grounded:false,ducking:false,hp:5,maxHp:5,
+  invincible:0,animFrame:0,runCycle:0
+};
+
+let camera = {x:0};
+let score = 0;
+let wave = 1;
+let platforms = [];
+let apples = [];
+let crows = [];
+let particles = [];
+let clouds = [];
+let cherryBlossoms = [];
+let finishFlag = {x:5000,y:H-200,w:30,h:200};
+let lastCrowSpawnX = 0;
+let totalCrowsSpawned = 0;
+
+function createLevel(){
+  platforms = [
+    {x:0,y:H-50,w:2000,h:50},
+    {x:300,y:H-150,w:150,h:20},
+    {x:550,y:H-220,w:120,h:20},
+    {x:800,y:H-180,w:100,h:20,moving:true,range:100,dir:1,speed:1,startX:800},
+    {x:1100,y:H-250,w:150,h:20},
+    {x:1400,y:H-150,w:100,h:20},
+    {x:1650,y:H-200,w:120,h:20,moving:true,range:150,dir:-1,speed:1.5,startX:1650},
+    {x:2000,y:H-180,w:200,h:20},
+    {x:2300,y:H-280,w:100,h:20},
+    {x:2600,y:H-220,w:150,h:20},
+    {x:2900,y:H-150,w:120,h:20,moving:true,range:120,dir:1,speed:1.2,startX:2900},
+    {x:3300,y:H-250,w:100,h:20},
+    {x:3600,y:H-200,w:150,h:20},
+    {x:3900,y:H-180,w:200,h:20},
+    {x:4200,y:H-300,w:100,h:20},
+    {x:4500,y:H-220,w:150,h:20},
+    {x:4800,y:H-150,w:200,h:20}
+  ];
+
+  apples = [
+    {x:350,y:H-200,taken:false},
+    {x:580,y:H-270,taken:false},
+    {x:1150,y:H-300,taken:false},
+    {x:1700,y:H-250,taken:false},
+    {x:2350,y:H-330,taken:false},
+    {x:2650,y:H-270,taken:false},
+    {x:3350,y:H-300,taken:false},
+    {x:3950,y:H-230,taken:false},
+    {x:4550,y:H-270,taken:false}
+  ];
+
+  crows = [];
+  totalCrowsSpawned = 0;
+  for(let i=0;i<6;i++){
+    spawnCrow(player.x + 500 + i*400);
+  }
+
+  clouds = [];
+  cherryBlossoms = [];
+  for(let i=0;i<10;i++){
+    clouds.push({x:i*500+Math.random()*200,y:50+Math.random()*100,w:80,h:40,speed:0.3});
+  }
+  for(let i=0;i<30;i++){
+    cherryBlossoms.push({
+      x:Math.random()*5000,y:Math.random()*H,
+      vx:-0.5-Math.random()*0.5,vy:0.5+Math.random()*0.5,
+      size:3+Math.random()*3,rot:Math.random()*Math.PI*2,rotSpeed:(Math.random()-0.5)*0.05
+    });
+  }
+}
+
+function spawnCrow(x){
+  const y = H - 380 + Math.random()*180;
+  crows.push({
+    x:x,
+    y:y,
+    baseY:y,
+    vx:-2.5-Math.random()*2,
+    w:40,h:30,
+    time:Math.random()*Math.PI*2,
+    waveSpeed:0.015+Math.random()*0.015,
+    wingPhase:Math.random()*Math.PI*2
+  });
+  totalCrowsSpawned++;
+}
+
+function resetPlayer(){
+  player.x = 100;
+  player.y = H-150;
+  player.vx = 0;
+  player.vy = 0;
+  player.hp = 5;
+  player.invincible = 0;
+  player.grounded = false;
+  player.ducking = false;
+  player.animFrame = 0;
+  player.runCycle = 0;
+  camera.x = 0;
+  lastCrowSpawnX = 0;
+  currentScore = 0;
+  currentDistance = 0;
+  crowsKilled = 0;
+}
+
+// ========== کنترل WASD ==========
+const keys = {};
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if((e.code==='KeyW'||e.code==='Space')&&player.grounded&&!player.ducking&&gameRunning){
+    player.vy=player.jumpPower;playSound('jump');
+  }
+  if(e.code==='KeyM'){musicOn=!musicOn;if(musicOn)playMusic();}
+  if(e.code==='KeyS')player.ducking=true;
+});
+window.addEventListener('keyup',e=>{
+  keys[e.code]=false;
+  if(e.code==='KeyS')player.ducking=false;
+});
+
+// موبایل
+let touchLeft=false,touchRight=false;
+document.getElementById('leftBtn').addEventListener('touchstart',e=>{touchLeft=true;e.preventDefault()});
+document.getElementById('leftBtn').addEventListener('touchend',e=>{touchLeft=false;e.preventDefault()});
+document.getElementById('rightBtn').addEventListener('touchstart',e=>{touchRight=true;e.preventDefault()});
+document.getElementById('rightBtn').addEventListener('touchend',e=>{touchRight=false;e.preventDefault()});
+document.getElementById('jumpBtn').addEventListener('touchstart',e=>{
+  if(player.grounded&&!player.ducking&&gameRunning){player.vy=player.jumpPower;playSound('jump');}
+  e.preventDefault();
+});
+document.getElementById('duckBtn').addEventListener('touchstart',e=>{player.ducking=true;e.preventDefault()});
+document.getElementById('duckBtn').addEventListener('touchend',e=>{player.ducking=false;e.preventDefault()});
+
+// ========== آپدیت ==========
+function update(){
+  if(!gameRunning||gameOver) return;
+
+  if(keys['KeyA']||touchLeft) player.vx=-player.speed;
+  else if(keys['KeyD']||touchRight) player.vx=player.speed;
+  else player.vx*=0.7;
+
+  if(Math.abs(player.vx)>0.5&&player.grounded) player.runCycle+=0.2;
+
+  player.vy+=0.6;
+  player.x+=player.vx;
+  player.y+=player.vy;
+
+  player.grounded=false;
+  platforms.forEach(p=>{
+    if(p.moving){
+      p.x+=p.dir*p.speed;
+      if(Math.abs(p.x-p.startX)>p.range)p.dir*=-1;
+    }
+    if(player.x+player.w>p.x&&player.x<p.x+p.w&&
+       player.y+player.h>p.y&&player.y<p.y+p.h){
+      if(player.vy>0&&player.y<p.y){
+        player.y=p.y-player.h;
+        player.vy=0;
+        player.grounded=true;
+        if(p.moving)player.x+=p.dir*p.speed;
+      }
+    }
+  });
+
+  if(player.x<0)player.x=0;
+  if(player.y>H){player.hp=0;endGame(false);}
+
+  camera.x=player.x-W/3;
+  if(camera.x<0)camera.x=0;
+
+  if(player.x - lastCrowSpawnX > 500){
+    spawnCrow(player.x + 1000);
+    lastCrowSpawnX = player.x;
+    document.getElementById('crowCount').textContent = crows.length;
+  }
+
+  crows.forEach((c,i)=>{
+    c.x+=c.vx;
+    c.time += c.waveSpeed;
+    c.y = c.baseY + Math.sin(c.time)*20;
+    c.wingPhase += 0.3;
+    
+    if(c.x<-100){
+      c.x=player.x+800+Math.random()*400;
+      c.baseY = H - 380 + Math.random()*180;
+      c.y = c.baseY;
+      c.time = Math.random()*Math.PI*2;
+    }
+    
+    if(!player.invincible&&
+       player.x<c.x+c.w&&player.x+player.w>c.x&&
+       player.y<c.y+c.h&&player.y+player.h>c.y){
+      player.hp-=2;
+      player.invincible=60;
+      playSound('hit');
+      updateHP();
+      if(player.hp<=0)endGame(false);
+    }
+  });
+
+  apples.forEach(a=>{
+    if(!a.taken&&
+       player.x<a.x+20&&player.x+player.w>a.x&&
+       player.y<a.y+20&&player.y+player.h>a.y){
+      a.taken=true;
+      player.hp=Math.min(player.maxHp,player.hp+1);
+      score+=50;
+      playSound('pickup');
+      updateHP();
+      particles.push({x:a.x,y:a.y,vx:0,vy:-3,life:20,color:'#0f0'});
+    }
+  });
+
+  if(player.x>finishFlag.x){
+    endGame(true);
+  }
+
+  if(player.invincible>0)player.invincible--;
+
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  particles=particles.filter(p=>p.life>0);
+
+  clouds.forEach(c=>{c.x-=c.speed;if(c.x<-100)c.x=W+100;});
+  
+  cherryBlossoms.forEach(cb=>{
+    cb.x+=cb.vx;cb.y+=cb.vy;cb.rot+=cb.rotSpeed;
+    if(cb.y>H||cb.x<-50){
+      cb.x=Math.random()*5000;cb.y=-20;
+    }
+  });
+
+  // به‌روزرسانی امتیازات
+  currentScore = score + Math.floor(player.x/10);
+  currentDistance = Math.floor(player.x);
+  document.getElementById('score').textContent = currentScore;
+  document.getElementById('distance').textContent = currentDistance;
+}
+
+function updateHP(){
+  document.getElementById('hpFill').style.width=(player.hp/player.maxHp*100)+'%';
+}
+
+function endGame(won){
+  gameRunning=false;
+  gameOver=true;
+  document.getElementById('gameOverText').textContent=won?'بردی! 🎉':'باختی!';
+  document.getElementById('finalScore').textContent=currentScore;
+  document.getElementById('gameOver').style.display='flex';
+  if(animationId)cancelAnimationFrame(animationId);
+  
+  // بارگذاری لیگ در صفحه Game Over
+  loadLeaderboard('leaderboardContainerGameOver', 'loadingTextGameOver');
+}
+
+// ========== رندر ==========
+function render(){
+  ctx.clearRect(0,0,W,H);
+
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#16213e');
+  grad.addColorStop(0.5,'#0f3460');
+  grad.addColorStop(1,'#533483');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  clouds.forEach(c=>{
+    ctx.beginPath();
+    ctx.arc(c.x-camera.x*0.3,c.y,c.w/2,0,Math.PI*2);
+    ctx.arc(c.x-camera.x*0.3+30,c.y,c.w/3,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  cherryBlossoms.forEach(cb=>{
+    ctx.save();
+    ctx.translate(cb.x-camera.x*0.5,cb.y);
+    ctx.rotate(cb.rot);
+    ctx.fillStyle='rgba(255,182,193,0.7)';
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      ctx.ellipse(0,0,cb.size,cb.size*0.6,i*Math.PI/5,0,Math.PI*2);
+    }
+    ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.fillStyle='#533483';
+  platforms.forEach(p=>{
+    ctx.fillRect(p.x-camera.x,p.y,p.w,p.h);
+    ctx.fillStyle='#0f3460';
+    ctx.fillRect(p.x-camera.x,p.y,p.w,5);
+    ctx.fillStyle='#533483';
+  });
+
+  apples.forEach(a=>{
+    if(a.taken)return;
+    ctx.fillStyle='#e94560';
+    ctx.beginPath();
+    ctx.arc(a.x-camera.x,a.y,10,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#0f0';
+    ctx.fillRect(a.x-camera.x-2,a.y-15,4,8);
+  });
+
+  crows.forEach(c=>{
+    ctx.save();
+    ctx.translate(c.x-camera.x+c.w/2,c.y+c.h/2);
+    
+    ctx.fillStyle='#1a1a1a';
+    ctx.beginPath();
+    ctx.ellipse(0,0,c.w/2,c.h/2,0,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(-c.w/3,-c.h/4,c.w/3,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.fillStyle='#ffa500';
+    ctx.beginPath();
+    ctx.moveTo(-c.w/2,-c.h/4);
+    ctx.lineTo(-c.w/2-8,-c.h/4+2);
+    ctx.lineTo(-c.w/2,-c.h/4+4);
+    ctx.fill();
+    
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(-c.w/3-2,-c.h/4-2,2,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.arc(-c.w/3-2,-c.h/4-2,1,0,Math.PI*2);
+    ctx.fill();
+    
+    const wingFlap = Math.sin(c.wingPhase)*10;
+    ctx.fillStyle='#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(0,wingFlap,c.w/1.5,c.h/3,-0.3,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.restore();
+  });
+
+  ctx.fillStyle='#ff0';
+  ctx.fillRect(finishFlag.x-camera.x,finishFlag.y,finishFlag.w,finishFlag.h);
+  ctx.fillStyle='#e94560';
+  ctx.beginPath();
+  ctx.moveTo(finishFlag.x-camera.x+finishFlag.w,finishFlag.y);
+  ctx.lineTo(finishFlag.x-camera.x+finishFlag.w+40,finishFlag.y+20);
+  ctx.lineTo(finishFlag.x-camera.x+finishFlag.w,finishFlag.y+40);
+  ctx.fill();
+
+  particles.forEach(p=>{
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=p.life/20;
+    ctx.fillRect(p.x-camera.x,p.y,4,4);
+    ctx.globalAlpha=1;
+  });
+
+  ctx.save();
+  if(player.invincible%10<5){
+    const h=player.ducking?player.h*0.6:player.h;
+    const y=player.ducking?player.y+player.h*0.4:player.y;
+    const legOffset = player.grounded ? Math.sin(player.runCycle)*5 : 0;
+    
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(player.x-camera.x+player.w/2,player.y+player.h-5,player.w/2,5,0,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.fillStyle='#2d2d44';
+    ctx.fillRect(player.x-camera.x+8,y+15,player.w-16,h-15);
+    
+    ctx.fillStyle='#1a1a2e';
+    ctx.fillRect(player.x-camera.x,y+18,8,h-25);
+    ctx.fillRect(player.x-camera.x+player.w-8,y+18,8,h-25);
+    
+    ctx.fillStyle='#1a1a2e';
+    ctx.fillRect(player.x-camera.x+8,y+h-15+legOffset,10,15);
+    ctx.fillRect(player.x-camera.x+player.w-18,y+h-15-legOffset,10,15);
+    
+    ctx.fillStyle='#ffdbac';
+    ctx.beginPath();
+    ctx.arc(player.x-camera.x+player.w/2,y+12,12,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.fillStyle='#0a0a0a';
+    ctx.fillRect(player.x-camera.x+5,y+2,30,10);
+    ctx.fillRect(player.x-camera.x+2,y+8,6,15);
+    ctx.fillRect(player.x-camera.x+player.w-8,y+8,6,15);
+    
+    ctx.fillStyle='#fff';
+    ctx.fillRect(player.x-camera.x+14,y+11,4,3);
+    ctx.fillRect(player.x-camera.x+22,y+11,4,3);
+    ctx.fillStyle='#000';
+    ctx.fillRect(player.x-camera.x+15,y+12,2,2);
+    ctx.fillRect(player.x-camera.x+23,y+12,2,2);
+    
+    ctx.fillStyle='#e94560';
+    ctx.beginPath();
+    ctx.moveTo(player.x-camera.x+player.w-5,y+15);
+    ctx.lineTo(player.x-camera.x+player.w+10,y+25);
+    ctx.lineTo(player.x-camera.x+player.w,y+20);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ========== حلقه بازی ==========
+function gameLoop(){
+  update();
+  render();
+  if(gameRunning)animationId=requestAnimationFrame(gameLoop);
+}
+
+function startGame(){
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('gameOver').style.display='none';
+  gameRunning=true;
+  gameOver=false;
+  score=0;
+  wave=1;
+  resetPlayer();
+  createLevel();
+  updateHP();
+  playMusic();
+  if(animationId)cancelAnimationFrame(animationId);
+  gameLoop();
+}
+
+function restartGame(){
+  location.reload();
+}
+
+document.addEventListener('click',()=>{if(audioCtx.state==='suspended')audioCtx.resume();});
+
+// ========== توابع سیستم امتیاز ==========
+
+// بارگذاری لیگ
+async function loadLeaderboard(containerId = 'leaderboardContainer', loadingId = 'loadingText') {
+    const container = document.getElementById(containerId);
+    const loadingEl = document.getElementById(loadingId);
+    
+    if (!container) return;
+    if (loadingEl) loadingEl.textContent = 'در حال بارگذاری امتیازات...';
+    
+    try {
+        const scores = await scoreAPI.getScores(20);
+        if (scores && scores.length > 0) {
+            createLeaderboard(scores, containerId);
+        } else {
+            container.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">هیچ امتیازی ثبت نشده است</p>';
+        }
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        container.innerHTML = '<p style="color:#e94560;text-align:center;padding:20px;">خطا در بارگذاری امتیازات</p>';
+    }
+}
+
+// تابع بروزرسانی لیگ
+function refreshLeaderboard() {
+    loadLeaderboard('leaderboardContainer', 'loadingText');
+}
+
+// تابع ذخیره امتیاز بازیکن
+async function savePlayerScore() {
+    const nameInput = document.getElementById('playerNameInput');
+    const statusEl = document.getElementById('saveStatus');
+    const name = nameInput.value.trim() || 'نینجا';
+    
+    statusEl.textContent = 'در حال ثبت امتیاز...';
+    statusEl.className = 'save-status';
+    
+    try {
+        const result = await scoreAPI.saveScore(
+            name,
+            currentScore,
+            currentDistance,
+            totalCrowsSpawned
+        );
+        
+        if (result) {
+            statusEl.textContent = '✅ امتیاز با موفقیت ثبت شد!';
+            statusEl.className = 'save-status';
+            nameInput.value = '';
+            
+            // بروزرسانی لیگ
+            loadLeaderboard('leaderboardContainerGameOver', 'loadingTextGameOver');
+            loadLeaderboard('leaderboardContainer', 'loadingText');
+        } else {
+            statusEl.textContent = '❌ خطا در ثبت امتیاز. دوباره تلاش کنید.';
+            statusEl.className = 'save-status error';
+        }
+    } catch (error) {
+        console.error('Error saving score:', error);
+        statusEl.textContent = '❌ خطا در ارتباط با سرور';
+        statusEl.className = 'save-status error';
+    }
+}
+
+// بارگذاری خودکار لیگ در صفحه شروع
+document.addEventListener('DOMContentLoaded', function() {
+    loadLeaderboard('leaderboardContainer', 'loadingText');
+    
+    // ثبت امتیاز با Enter
+    document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            savePlayerScore();
+        }
+    });
+});
+
+// اضافه کردن دکمه ایجاد Bin (برای اولین بار)
+console.log('برای ایجاد Bin جدید، از تابع زیر استفاده کنید:');
+console.log('scoreAPI.createBin().then(r=>console.log(r))');
+</script>
+</body>
+</html>

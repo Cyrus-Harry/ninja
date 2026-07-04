@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی‌های نینجا</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: Tahoma, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .logo {
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            font-size: 48px;
+            color: #e94560;
+            text-shadow: 3px 3px 0px #0f3460, 0 0 20px rgba(233, 69, 96, 0.3);
+            margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .logo p {
+            color: #a8b2d1;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #e94560;
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.2);
+        }
+
+        .game-card .icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .game-card h2 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            color: #a8b2d1;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .game-card .tags {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .game-card .tag {
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+        }
+
+        .status {
+            margin-top: 30px;
+            color: #a8b2d1;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        .status span {
+            color: #4caf50;
+        }
+
+        .footer {
+            margin-top: 40px;
+            color: #a8b2d1;
+            font-size: 14px;
+            opacity: 0.5;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e94560;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 480px) {
+            .logo h1 {
+                font-size: 32px;
+            }
+            
+            .game-card {
+                padding: 20px;
+            }
+            
+            .game-card .icon {
+                font-size: 48px;
+            }
+            
+            .game-card h2 {
+                font-size: 22px;
+            }
+        }
+
+        /* انیمیشن ورود */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container > * {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .container > *:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        .container > *:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        .container > *:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- لوگو -->
+        <div class="logo">
+            <h1>🎮 بازی‌های نینجا</h1>
+            <p>مجموعه بازی‌های ماجراجویی و اکشن</p>
+        </div>
+
+        <!-- کارت بازی نینجا رانر -->
+        <a href="ninja.html" class="game-card">
+            <span class="icon">🥷</span>
+            <h2>نینجا رانر <span class="badge">جدید</span></h2>
+            <p>
+                در نقش یک نینجا، از میان کلاغ‌های ژاپنی عبور کن و 
+                با جمع‌آوری سیب‌ها جان خود را نجات بده.
+                <br>
+                <small style="color: #666;">🎯 هدف: رسیدن به پرچم پایان</small>
+            </p>
+            <div class="tags">
+                <span class="tag">🏃 اکشن</span>
+                <span class="tag">🇯🇵 ژاپنی</span>
+                <span class="tag">🐦‍⬛ کلاغ</span>
+                <span class="tag">🍎 سیب</span>
+                <span class="tag">🏆 امتیاز</span>
+            </div>
+        </a>
+
+        <!-- وضعیت -->
+        <div class="status">
+            ✅ بازی آماده اجراست 
+            <span>●</span> 
+            نسخه v0.3
+            <br>
+            <span style="font-size: 12px; opacity: 0.6;">
+                با کلیک روی کارت وارد بازی شوید
+            </span>
+        </div>
+
+        <!-- فوتر -->
+        <div class="footer">
+            ساخته شده با ❤️ برای دوستداران بازی‌های ژاپنی
+            <br>
+            <span style="font-size: 12px;">
+                🎵 موسیقی سنتی | 🎮 کنترل با WASD | 📱 سازگار با موبایل
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // اضافه کردن افکت کلیک برای کارت بازی
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // افکت ریپل
+                const ripple = document.createElement('span');
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(233, 69, 96, 0.3)';
+                ripple.style.width = '20px';
+                ripple.style.height = '20px';
+                ripple.style.left = e.offsetX + 'px';
+                ripple.style.top = e.offsetY + 'px';
+                ripple.style.pointerEvents = 'none';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.transition = 'transform 0.6s, opacity 0.6s';
+                ripple.style.opacity = '1';
+                
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                
+                requestAnimationFrame(() => {
+                    ripple.style.transform = 'scale(20)';
+                    ripple.style.opacity = '0';
+                });
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // نمایش پیام در کنسول
+        console.log('🥷 به بازی‌های نینجا خوش آمدید!');
+        console.log('📂 برای شروع، روی کارت بازی کلیک کنید.');
+        console.log('🎮 نسخه: v0.3');
+        console.log('👨‍💻 توسعه‌دهنده: تیم نینجا');
+    </script>
+</body>
+</html>

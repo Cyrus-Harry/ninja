@@ -67,14 +67,12 @@
   /* مخفی کردن کنترلها در دسکتاپ */
   @media (min-width:769px){#mobileControls{display:none !important}}
   
-  /* responsive برای صفحه‌های خیلی کوچک */
   @media (max-width:400px){
     .mBtn{width:clamp(40px,11vw,50px);height:clamp(40px,11vw,50px);font-size:clamp(16px,4.5vw,22px)}
     .mBtn.jump-btn{width:clamp(48px,13vw,60px);height:clamp(48px,13vw,60px);font-size:clamp(20px,5vw,28px)}
     #gameOver .player-name-input input{width:min(140px,50%)}
   }
   
-  /* برای صفحه‌های با ارتفاع کم */
   @media (max-height:600px){
     .mBtn{width:clamp(35px,9vw,50px);height:clamp(35px,9vw,50px);font-size:clamp(14px,4vw,20px)}
     .mBtn.jump-btn{width:clamp(42px,11vw,58px);height:clamp(42px,11vw,58px);font-size:clamp(18px,4.5vw,26px)}
@@ -90,13 +88,11 @@
 <div id="gameContainer">
   <canvas id="game" width="900" height="500"></canvas>
   
-  <!-- HUD -->
   <div id="hud">
     <div>امتیاز: <span id="score">0</span> | فاصله: <span id="distance">0</span>m</div>
     <div id="hpBar"><div id="hpFill" style="width:100%"></div></div>
   </div>
   
-  <!-- صفحه شروع -->
   <div id="startScreen">
     <h1>🥷 نینجا رانر</h1>
     <p>کلاغ‌های ژاپنی در کمین! جاخالی بده و زنده بمون</p>
@@ -113,7 +109,6 @@
     <p style="margin-top:8px;font-size:clamp(10px,2vw,14px);color:#aaa">🍎 سیب = +1 جون | 🐦‍⬛ کلاغ = -2 جون</p>
   </div>
   
-  <!-- صفحه Game Over -->
   <div id="gameOver">
     <h2 id="gameOverText">باختی!</h2>
     <p>امتیاز نهایی: <span id="finalScore">0</span></p>
@@ -134,7 +129,6 @@
     <button class="restart-btn" onclick="restartGame()">🔄 دوباره</button>
   </div>
   
-  <!-- کنترل‌های لمسی موبایل -->
   <div id="mobileControls">
     <div class="mBtn-group">
       <div class="mBtn" id="leftBtn">◀</div>
@@ -315,53 +309,110 @@ function resetPlayer(){
 
 // ========== کنترل‌ها ==========
 const keys = {};
-window.addEventListener('keydown',e=>{
-  keys[e.code]=true;
-  if((e.code==='KeyW'||e.code==='Space')&&player.grounded&&!player.ducking&&gameRunning){
-    player.vy=player.jumpPower;playSound('jump');
+let touchLeft = false;
+let touchRight = false;
+
+// کنترل کیبورد
+window.addEventListener('keydown', function(e) {
+  keys[e.code] = true;
+  
+  // پرش با W یا Space
+  if ((e.code === 'KeyW' || e.code === 'Space') && player.grounded && !player.ducking && gameRunning) {
+    player.vy = player.jumpPower;
+    playSound('jump');
   }
-  if(e.code==='KeyM'){musicOn=!musicOn;if(musicOn)playMusic();}
-  if(e.code==='KeyS')player.ducking=true;
-});
-window.addEventListener('keyup',e=>{
-  keys[e.code]=false;
-  if(e.code==='KeyS')player.ducking=false;
+  
+  // تغییر وضعیت نشستن
+  if (e.code === 'KeyS') {
+    player.ducking = true;
+  }
+  
+  // قطع/وصل موسیقی
+  if (e.code === 'KeyM') {
+    musicOn = !musicOn;
+    if (musicOn) playMusic();
+  }
 });
 
-// کنترل‌های لمسی
-let touchLeft=false,touchRight=false;
+window.addEventListener('keyup', function(e) {
+  keys[e.code] = false;
+  if (e.code === 'KeyS') {
+    player.ducking = false;
+  }
+});
 
+// کنترل لمسی - فقط در موبایل فعال میشه
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
 const jumpBtn = document.getElementById('jumpBtn');
 const duckBtn = document.getElementById('duckBtn');
 
-function setupTouch(el, onStart, onEnd) {
-  el.addEventListener('touchstart', e=>{e.preventDefault(); onStart();});
-  el.addEventListener('touchend', e=>{e.preventDefault(); onEnd();});
-  el.addEventListener('touchcancel', e=>{e.preventDefault(); onEnd();});
-  el.addEventListener('mousedown', onStart);
-  el.addEventListener('mouseup', onEnd);
-  el.addEventListener('mouseleave', onEnd);
-}
+// فقط اگر در موبایل هستیم (عرض کمتر از 768px)
+if (window.innerWidth < 768) {
+  // دکمه چپ
+  leftBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    touchLeft = true;
+  });
+  leftBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    touchLeft = false;
+  });
+  leftBtn.addEventListener('touchcancel', function(e) {
+    e.preventDefault();
+    touchLeft = false;
+  });
 
-setupTouch(leftBtn, ()=>{touchLeft=true;}, ()=>{touchLeft=false;});
-setupTouch(rightBtn, ()=>{touchRight=true;}, ()=>{touchRight=false;});
-setupTouch(jumpBtn, ()=>{
-  if(player.grounded&&!player.ducking&&gameRunning){
-    player.vy=player.jumpPower;
-    playSound('jump');
-  }
-}, ()=>{});
-setupTouch(duckBtn, ()=>{player.ducking=true;}, ()=>{player.ducking=false;});
+  // دکمه راست
+  rightBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    touchRight = true;
+  });
+  rightBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    touchRight = false;
+  });
+  rightBtn.addEventListener('touchcancel', function(e) {
+    e.preventDefault();
+    touchRight = false;
+  });
+
+  // دکمه پرش
+  jumpBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (player.grounded && !player.ducking && gameRunning) {
+      player.vy = player.jumpPower;
+      playSound('jump');
+    }
+  });
+
+  // دکمه نشستن
+  duckBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    player.ducking = true;
+  });
+  duckBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    player.ducking = false;
+  });
+  duckBtn.addEventListener('touchcancel', function(e) {
+    e.preventDefault();
+    player.ducking = false;
+  });
+}
 
 // ========== آپدیت ==========
 function update(){
   if(!gameRunning||gameOver) return;
 
-  if(keys['KeyA']||touchLeft) player.vx=-player.speed;
-  else if(keys['KeyD']||touchRight) player.vx=player.speed;
-  else player.vx*=0.7;
+  // حرکت با کیبورد یا لمس
+  if (keys['KeyA'] || keys['ArrowLeft'] || touchLeft) {
+    player.vx = -player.speed;
+  } else if (keys['KeyD'] || keys['ArrowRight'] || touchRight) {
+    player.vx = player.speed;
+  } else {
+    player.vx *= 0.7;
+  }
 
   if(Math.abs(player.vx)>0.5&&player.grounded) player.runCycle+=0.2;
 
@@ -483,7 +534,6 @@ function render(){
   ctx.fillStyle=grad;
   ctx.fillRect(0,0,W,H);
 
-  // ابرها
   ctx.fillStyle='rgba(255,255,255,0.2)';
   clouds.forEach(c=>{
     ctx.beginPath();
@@ -492,7 +542,6 @@ function render(){
     ctx.fill();
   });
 
-  // شکوفه‌ها
   cherryBlossoms.forEach(cb=>{
     ctx.save();
     ctx.translate(cb.x-camera.x*0.5,cb.y);
@@ -506,7 +555,6 @@ function render(){
     ctx.restore();
   });
 
-  // سکوها
   ctx.fillStyle='#533483';
   platforms.forEach(p=>{
     ctx.fillRect(p.x-camera.x,p.y,p.w,p.h);
@@ -515,7 +563,6 @@ function render(){
     ctx.fillStyle='#533483';
   });
 
-  // سیب‌ها
   apples.forEach(a=>{
     if(a.taken)return;
     ctx.fillStyle='#e94560';
@@ -526,7 +573,6 @@ function render(){
     ctx.fillRect(a.x-camera.x-1.5,a.y-12,3,6);
   });
 
-  // کلاغ‌ها
   crows.forEach(c=>{
     ctx.save();
     ctx.translate(c.x-camera.x+c.w/2,c.y+c.h/2);
@@ -565,7 +611,6 @@ function render(){
     ctx.restore();
   });
 
-  // پرچم پایان
   ctx.fillStyle='#ffd700';
   ctx.fillRect(finishFlag.x-camera.x,finishFlag.y,finishFlag.w,finishFlag.h);
   ctx.fillStyle='#e94560';
@@ -575,7 +620,6 @@ function render(){
   ctx.lineTo(finishFlag.x-camera.x+finishFlag.w,finishFlag.y+36);
   ctx.fill();
 
-  // ذرات
   particles.forEach(p=>{
     ctx.fillStyle=p.color;
     ctx.globalAlpha=p.life/20;
@@ -583,7 +627,6 @@ function render(){
     ctx.globalAlpha=1;
   });
 
-  // بازیکن
   ctx.save();
   if(player.invincible%8<4){
     const h=player.ducking?player.h*0.6:player.h;
@@ -733,7 +776,6 @@ async function savePlayerScore() {
   }
 }
 
-// بارگذاری اولیه
 document.addEventListener('DOMContentLoaded', function() {
   loadLeaderboard('leaderboardContainer', 'loadingText');
   document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
